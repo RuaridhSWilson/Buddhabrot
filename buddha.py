@@ -9,7 +9,8 @@ class Buddha:
 
     def build(self, iterations: int = 100, n_points: int = 10_000) -> None:
         self.paths = np.zeros((iterations + 1, n_points), dtype=complex)
-        self.paths[0, :] = np.random.uniform(-2, 2, n_points) + np.random.uniform(-2, 2, n_points) * 1j
+        c = np.random.uniform(-2, 2, n_points) + np.random.uniform(-2, 2, n_points) * 1j
+        self.paths[0, :] = np.where(np.abs(c) <= 2, c, np.nan)
 
         for i in range(1, iterations + 1):
             z = self.paths[i - 1, :] ** 2 + self.paths[0, :]  # z_{n+1} = z_n^2 + c
@@ -24,19 +25,21 @@ class Buddha:
         escapees = np.isnan(self.paths[-1, :])
         for step in self.paths[:, escapees]:
             step = step[np.isfinite(step)]
+            if step.size == 0:
+                break
             step = (step + 2 + 2j) / 4 * max(resolution)
             ys = step.imag.astype(int)
             xs = step.real.astype(int)
             ys = ys[ys < resolution[0]]
             xs = xs[xs < resolution[1]]
-            self.image[ys, xs] += 1
+            np.add.at(self.image, (xs, ys), 1)
         self.image = 255 * self.image // self.image.max(initial=1)
+        self.image = np.uint8(self.image)
 
     def show(self) -> None:
         if self.image is None:
             print("You must call Buddha.render() before showing")
             return
-
         im = Image.fromarray(self.image, mode="L")
         im.show()
 
@@ -44,6 +47,5 @@ class Buddha:
         if self.image is None:
             print("You must call Buddha.render() before saving")
             return
-
         im = Image.fromarray(self.image, mode="L")
         im.save(filename, format="PNG")
