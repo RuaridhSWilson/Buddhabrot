@@ -16,6 +16,9 @@ class Buddha:
             z = self.paths[i - 1, :] ** 2 + self.paths[0, :]  # z_{n+1} = z_n^2 + c
             self.paths[i, :] = np.where(np.abs(z) <= 2, z, np.nan)
 
+    def save_paths(self, filename: str = "buddha_paths") -> None:
+        np.save(filename, self.paths)
+
     def render(self, resolution: (int, int) = (1_000, 1_000), zoom: float = 3.5) -> None:
         if self.paths is None:
             print("You must call Buddha.build() before rendering")
@@ -36,6 +39,9 @@ class Buddha:
         self.image = 255 * self.image // self.image.max(initial=1)
         self.image = np.uint8(self.image)
 
+    def save_render(self, filename: str = "buddha_render") -> None:
+        np.save(filename, self.image)
+
     def show(self) -> None:
         if self.image is None:
             print("You must call Buddha.render() before showing")
@@ -43,9 +49,9 @@ class Buddha:
         im = Image.fromarray(self.image, mode="L")
         im.show()
 
-    def save(self, filename: str = "buddhabrot") -> None:
+    def export(self, filename: str = "buddhabrot") -> None:
         if self.image is None:
-            print("You must call Buddha.render() before saving")
+            print("You must call Buddha.render() before exporting")
             return
         im = Image.fromarray(self.image, mode="L")
         im.save(filename, format="PNG")
