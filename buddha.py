@@ -7,14 +7,16 @@ class Buddha:
         self.paths = None
         self.image = None
 
-    def build(self, iterations: int = 100, n_points: int = 10_000) -> None:
+    def build(self, iterations: int = 100, n_points: int = 10_000,
+              path_limit: float = abs(2 + 2j), spawn_limit: float = 2) -> None:
         self.paths = np.zeros((iterations + 1, n_points), dtype=complex)
-        c = np.random.uniform(-2, 2, n_points) + np.random.uniform(-2, 2, n_points) * 1j
-        self.paths[0, :] = np.where(np.abs(c) <= 2, c, np.nan)
+        c = np.random.uniform(-spawn_limit, spawn_limit, n_points) +\
+            np.random.uniform(-spawn_limit, spawn_limit, n_points) * 1j
+        self.paths[0, :] = np.where(np.abs(c) <= path_limit, c, np.nan)
 
         for i in range(1, iterations + 1):
             z = self.paths[i - 1, :] ** 2 + self.paths[0, :]  # z_{n+1} = z_n^2 + c
-            self.paths[i, :] = np.where(np.abs(z) <= 2, z, np.nan)
+            self.paths[i, :] = np.where(np.abs(z) <= path_limit, z, np.nan)
 
     def save_paths(self, filename: str = "buddha_paths") -> None:
         np.save(filename, self.paths)
@@ -33,7 +35,7 @@ class Buddha:
             step = step[np.isfinite(step)]
             if step.size == 0:
                 break
-            step = step * zoom * max(resolution) / 4 + height/2 + offset_y + (width/2 + offset_x) * 1j
+            step = step * zoom * max(resolution) / 4 + height / 2 + offset_y + (width / 2 + offset_x) * 1j
             xs = step.imag.astype(int)
             ys = step.real.astype(int)
             within_bounds = (xs >= 0) & (xs < width) & (ys >= 0) & (ys < height)
