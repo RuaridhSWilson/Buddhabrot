@@ -19,23 +19,27 @@ class Buddha:
     def save_paths(self, filename: str = "buddha_paths") -> None:
         np.save(filename, self.paths)
 
-    def render(self, resolution: (int, int) = (1_000, 1_000), zoom: float = 3.5) -> None:
+    def render(self, resolution: (int, int) = (1_000, 1_000), zoom: float = 1.0, offset: (int, int) = (0, 0)) -> None:
         if self.paths is None:
             print("You must call Buddha.build() before rendering")
             return
 
-        self.image = np.zeros(resolution, dtype=int)
+        width, height = resolution
+        offset_x, offset_y = offset
+
+        self.image = np.zeros((height, width), dtype=int)
         escapees = np.isnan(self.paths[-1, :])
         for step in self.paths[:, escapees]:
             step = step[np.isfinite(step)]
             if step.size == 0:
                 break
-            step = (step + 2 + 2j) / 4 * max(resolution)
-            ys = step.imag.astype(int)
-            xs = step.real.astype(int)
-            ys = ys[ys < resolution[0]]
-            xs = xs[xs < resolution[1]]
-            np.add.at(self.image, (xs, ys), 1)
+            step = step * zoom * max(resolution) / 4 + height/2 + offset_y + (width/2 + offset_x) * 1j
+            xs = step.imag.astype(int)
+            ys = step.real.astype(int)
+            within_bounds = (xs >= 0) & (xs < width) & (ys >= 0) & (ys < height)
+            xs = xs[within_bounds]
+            ys = ys[within_bounds]
+            np.add.at(self.image, (ys, xs), 1)
         self.image = 255 * self.image // self.image.max(initial=1)
         self.image = np.uint8(self.image)
 
